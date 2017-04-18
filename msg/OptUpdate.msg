@@ -1,4 +1,4 @@
 Header header
 uint32 node_id
-JointState pan_tilt
+sensor_msgs/JointState pan_tilt
 

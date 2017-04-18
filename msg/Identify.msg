@@ -2,6 +2,6 @@
 
 Header header
 uint32 node_id
-Point position
-JointState pan_tilt
+geometry_msgs/Point position
+sensor_msgs/JointState pan_tilt
 
