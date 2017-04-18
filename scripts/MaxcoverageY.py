@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import rospy
+import time
 from std_msgs.msg import String
 
 def callback(data):
@@ -12,7 +13,7 @@ def listener(topic):
      # anonymous=True flag means that rospy will choose a unique
      # name for our 'listener' node so that multiple listeners can
      # run simultaneously.
-     rospy.init_node('listener', anonymous=True)
+     ##rospy.init_node('listener', anonymous=True)
      rospy.Subscriber(topic, String, callback)
  
      # spin() simply keeps python from exiting until this node is stopped
@@ -20,7 +21,8 @@ def listener(topic):
 
 def talker(topic):
      pub = rospy.Publisher(topic, String, queue_size=10)
-     rospy.init_node('talker', anonymous=True)
+     time.sleep(2)
+     ##rospy.init_node('talker', anonymous=True)
      rate = rospy.Rate(10) # 10hz
      while not rospy.is_shutdown():
          hello_str = "hello world %s" % rospy.get_time()
@@ -30,6 +32,7 @@ def talker(topic):
 
      
 if __name__ == '__main__':
+    rospy.init_node('NODESELF', anonymous=True)
     #*enter network
     #*broadcast entry to get other nodes
     #talker(NodeID)
