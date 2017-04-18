@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import rospy
+import time
 from std_msgs.msg import String
 
 def callback(data):
@@ -20,6 +21,7 @@ def listener(topic):
 
 def talker(topic):
      pub = rospy.Publisher(topic, String, queue_size=10)
+     time.sleep(2)
      ##rospy.init_node('talker', anonymous=True)
      rate = rospy.Rate(10) # 10hz
      while not rospy.is_shutdown():
