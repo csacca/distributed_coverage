@@ -36,6 +36,9 @@
 ## Simple talker demo that published std_msgs/Strings messages
 ## to the 'chatter' topic
 
+# Masters Project Tufts University
+# Steven Santos & Chris Sacca
+
 import rospy
 import time
 import numpy
@@ -48,7 +51,7 @@ from geometry_msgs.msg import Point
 from std_msgs.msg import String
 from math import pi
 from math import tan
-from shapely.geometry import Point
+from shapely.geometry import Point as pointold
 from shapely.geometry.polygon import Polygon
 
 
@@ -64,12 +67,8 @@ anglemax=(pi/2)-fovangle/2
 
 # Init variables
 maxcov=0
-tiltfinal=[0,0,0,0]
 side=[]
 
-maxnode=1
-
-##now=[]
 #======================================================================================================
 def converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt):
     xp=[]
@@ -147,7 +146,7 @@ def converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt):
     
     for i in range(xmin,xmax+1):
         for j in range(ymin,ymax+1):
-            pointtemp=Point(i,j)
+            pointtemp=pointold(i,j)
             for k in range(0,len(polygon)):
                 if(polygon[k].intersects(pointtemp)):
                     areacov[ymax-j,i]=1
@@ -158,7 +157,6 @@ def converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt):
     
     return coverage
 #============================================================================ 
-
 
 def talkerdiscovery(nodeid):
     global pub1
@@ -222,14 +220,19 @@ def callback(data):
     rospy.loginfo(rospy.get_caller_id() + 'I heard %r', data)
     
 def calldiscovery(data):
+    print("RECIEVED DISCOVERY")
     global msg1
-    #global entryflag
+    global newdiscovery
     global rosid
+    
     ms1=EntryExit()
     msg1=data
     talkerannounce(rosid,rosx,rosy,rostilt,0)
+    time.sleep(2)
+    newdiscovery=True
     
 def callannounce(data):
+    print("RECIEVED ANNOUNCE")
     global rosid
     global msg2
     msg2[data.node_id]=data
@@ -242,47 +245,102 @@ def callannounce(data):
         print(t)
         
 def callupdate(data):
+    print("++++++++RECIEVED UPDATE++++++++++")
+    global rosid
     global msg2
     global newtilt
     global currtilt
+    global maxnode
+    global nodes
+    global tilt
+    
     # Update msg2 with new angle
     temp=msg2[data.node_id]
-    temp.pan_tilt.position[0]=data.angle
-    msg2[data.node_id]=temp
-    print('New values')
+    hello_str=Identify()
+    hello_str.header.stamp=rospy.Time.now()
+    hello_str.node_id=temp.node_id
+    pointmsg=Point()
+    pointmsg.x=temp.position.x
+    pointmsg.y=temp.position.y
+    jointstatemsg=JointState()
+    jointstatemsg.name=[ 'pan', 'tilt']
+    jointstatemsg.position=[data.pan_tilt.position[0],0]
+    hello_str.position=pointmsg
+    hello_str.pan_tilt=jointstatemsg
+    msg2[data.node_id]=hello_str
+    print('=====New Node to be updated with values====')
     print(data.node_id)
-    print(msg2)
-    print ('-----END-----')
+    print ('-----END Node Info-----')
+    
+    nodes2=[]
+    tilt2=[]
+    #Update the Nodes and Tilt lists
+    for t in msg2:
+        temp=msg2[t]
+        nodes2.append([temp.position.x,temp.position.y])
+        tilt2.append(temp.pan_tilt.position[0])
+    nodes=nodes2
+    tilt=tilt2
+
+    # Break if Not the node that was controlled
+    if(data.node_id != rosid):
+        return
+    
     # Decide if done when max node reached
     if(data.node_id == maxnode):
         change=0
         newtilt=[]
         for t in msg2:
             temp2=msg2[t]
-            if(temp2.pan_tilt.position[0]  != currtilt(t-1)):
+            if(temp2.pan_tilt.position[0]  != currtilt[t-1]):
                 change=1
             newtilt.append(temp2.pan_tilt.position[0])
+        currtilt=newtilt
+        # Optimize all nodes again if any of the angles changed
         if(change == 1):
-            print('Next Round of iterations')
+            print('#####Next Round of iterations#####')
             talkeroptctrl(1,'next')
         else:
-            print('Final Results')
-            for t in msg2:
-                temp=msg2[t]
-                nodes.append([temp.position.x,temp.position.y])
-                tilt.append(temp.pan_tilt.position[0])
+            print('#####===Final Results===#####')
+            print(msg2)
             print(nodes)
             print(tilt)
+            # Tell all nodes to pan-tilt
+            talkeroptctrl(1,'end')
+            return
     else:
-        print('Next Iteration')
+        print('Next Node will Iterate sequentially')
         talkeroptctrl(data.node_id+1,'next')
     
 def callctrl(data):
+    print("++++++++++++++RECIEVED CONTROL+++++++++++++")
+    global rosid
+    global currtilt
     global nodes
     global tilt
+    global finishtask
+
+    # Break if not the node being controlled
+    if(data.node_id != rosid):
+        return
+
+    # Turn the Pan-Tilt Systems
+    if(data.state=='end'):
+        print('#####Final Results#####')
+        print(nodes)
+        print(tilt)
+        talkeroptctrl(data.node_id+1,'end')
+        finishtask=True
+        return
+
+       
+    tiltfinal=anglemin
     # Optomize a single tilt
-    print('Optomizing this node')
+    print('=====Optomizing this node=====')
     print(data.node_id)
+    print(nodes)
+    print(tilt)
+    maxcov=0
     angle=anglemin
     while(angle<=anglemax):
         tilt[data.node_id-1]=angle
@@ -292,26 +350,36 @@ def callctrl(data):
             tiltfinal=angle
         angle=angle+increm
     # Update that node's angle    
-    talkeroptupdate(data.node_id,angle,0)
+    talkeroptupdate(data.node_id,tiltfinal,0)
+    print("++++++++DONE CONTROL++++++++++")
     
 
 if __name__ == '__main__':
     # Initialize Node
     rospy.init_node('Node1', anonymous=True)
+    
+    global rosid
+    
     # Create Publishers
     pub1 = rospy.Publisher('discovery', EntryExit, queue_size=10)
     pub2 = rospy.Publisher('announce', Identify, queue_size=10)
     pub3 = rospy.Publisher('optupdate', OptUpdate, queue_size=10)
     pub4 = rospy.Publisher('optctrl', OptCtrl, queue_size=10)
+    
     # Input Param Setup
     rosid=rospy.get_param('~nodeid',0)
     rosx=rospy.get_param('~posx',0)
     rosy=rospy.get_param('~posy',0)
     rostilt=rospy.get_param('~tilt',0)
 
+    # Global Variables
     global msg2
     global msg3
-    msg2={}
+    global maxnode
+    global currtilt
+    global newdiscovery
+    global finishtask
+    msg2={} #Declarea as dictionary
 
     #Listen for data from other nodes
     rospy.Subscriber('announce', Identify, callannounce) #msg1 should now have array of all node data
@@ -321,37 +389,60 @@ if __name__ == '__main__':
 
     # Listen for data from other nodes
     time.sleep(5)
-    print('send self')
+    print('Sending Self to other Nodes / selfid:')
     print(rosid)
+    # Announce Self
     talkerannounce(rosid,rosx,rosy,rostilt,0)
     time.sleep(2)
     
     rospy.Subscriber('discovery', EntryExit, calldiscovery)
-    print('CAN RUN OTHER NODES')
-    time.sleep(5)
+    print('System able to discovery new nodes')
+    time.sleep(3)
     rospy.Subscriber('optupdate', OptUpdate, callupdate)
     rospy.Subscriber('optctrl', OptCtrl, callctrl)
-                     
+
+    # Loop for Network Optimization Configuration
     while(True):
+        print("Wait for Node data and Organize data")
+        time.sleep(20)
+        print("No More New Nodes")
+        finishtask=False
         nodes=[]
         tilt=[]
-        print("Wait for and Organize data")
-        time.sleep(20)
+        maxnode=0
         for t in msg2:
             temp=msg2[t]
+            if(temp.node_id > maxnode):
+                maxnode=temp.node_id
             nodes.append([temp.position.x,temp.position.y])
-            tilt.append(temp.pan_tilt.position[0])
+            #tilt.append(temp.pan_tilt.position[0])
+            #Start with all zeros
+            tilt.append(0.0)
+        print("Initial Values:")
         print(nodes)
         print(tilt)
+        print(maxnode)
+        # Initial configuration
         currtilt=tilt
-        print("Begin Optomization")
+        print("=======Begin Optomization===========")
         time.sleep(2)
+        # If it is the first node, initiate the optimization
+        # else wait till a cntrl signal recieved
         if(rosid ==1):
             talkeroptctrl(rosid,'next')
         else:
             time.sleep(5)
-        print("END Optomization")
-        time.sleep(25)
-                     
-        
+        newdiscovery=False
+        # Wait till pan-tilt hardware finishes
+        while(True):
+            if(finishtask):
+                break
+            time.sleep(1)
+        print("==================END Optomization=============")
+        print("Waiting for new discovery")
+        # Wait for New Node
+        while(True):
+            if(newdiscovery):
+                break
+            time.sleep(1)
 
