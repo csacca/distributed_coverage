@@ -65,8 +65,8 @@ ymin=0                # Bottom Side
 fovangle=pi/8      # Field of View for Camera
 increm=pi/16       # Angle increment used for Optimization
 # Limits viewing angles to the walls tangent to node
-# (+) angle => Right Side of Node
-# (-)  angle => Left Side of Node
+# (-) angle => Right Side of Node
+# (+)  angle => Left Side of Node
 anglemin=(-pi/2)+fovangle/2  
 anglemax=(pi/2)-fovangle/2
 
@@ -228,6 +228,14 @@ def talkeroptctrl(nodeid,state):
     pub4.publish(hello_str)
     rate.sleep()
 
+def talkerturret(jointstatemsg):
+    global pub5
+    time.sleep(4)
+    rate = rospy.Rate(10) # 10hz
+    rospy.loginfo(jointstatemsg)
+    pub5.publish(jointstatemsg)
+    rate.sleep()
+
 #===== Callback Functions =====
 # Functions that execute code once something heard on subscribed topic
 
@@ -317,10 +325,10 @@ def callupdate(data):
             print('#####Next Round of iterations#####')
             talkeroptctrl(1,'next')
         else:
-            print('#####===Final Results===#####')
-            print(msg2)
-            print(nodes)
-            print(tilt)
+            #print('Final Results===#####')
+            #print(msg2)
+            #print(nodes)
+            #print(tilt)
             # Tell all nodes to pan-tilt
             talkeroptctrl(1,'end')
             return
@@ -345,6 +353,12 @@ def callctrl(data):
         print('#####Final Results#####')
         print(nodes)
         print(tilt)
+        jointstatemsg=JointState()
+        jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
+        jointstatemsg.position=[tilt[rosid-1],0]
+        print(jointstatemsg)
+        talkerturret(jointstatemsg)
+        
         talkeroptctrl(data.node_id+1,'end')
         finishtask=True
         return
@@ -379,12 +393,14 @@ if __name__ == '__main__':
     rospy.init_node('Node1', anonymous=True)
     
     global rosid
+    turret_prefix=""
     
     # Create Publishers
     pub1 = rospy.Publisher('discovery', EntryExit, queue_size=10)
     pub2 = rospy.Publisher('announce', Identify, queue_size=10)
     pub3 = rospy.Publisher('optupdate', OptUpdate, queue_size=10)
     pub4 = rospy.Publisher('optctrl', OptCtrl, queue_size=10)
+    pub5 = rospy.Publisher(turret_prefix + "/joint_states", JointState, queue_size=10)
     
     # Input Param Setup
     rosid=rospy.get_param('~nodeid',0)
