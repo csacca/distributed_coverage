@@ -36,9 +36,11 @@
 ## Simple talker demo that published std_msgs/Strings messages
 ## to the 'chatter' topic
 
-# Masters Project Tufts University
+# Masters Project Tufts University Usman Khan
+# Dynamic ADHOC Camera Sensor Network: Maximal Coverage
 # Steven Santos & Chris Sacca
 
+# =====Importing Libraries=====
 import rospy
 import time
 import numpy
@@ -55,22 +57,27 @@ from shapely.geometry import Point as pointold
 from shapely.geometry.polygon import Polygon
 
 
-# Parameters
-xmax=14
-ymax=14
-xmin=0
-ymin=0
-fovangle=pi/8
-increm=pi/16
-anglemin=(-pi/2)+fovangle/2
+# =====Parameters=====
+xmax=14             # Right Side
+ymax=14             # Top Side
+xmin=0                # Left Side
+ymin=0                # Bottom Side
+fovangle=pi/8      # Field of View for Camera
+increm=pi/16       # Angle increment used for Optimization
+# Limits viewing angles to the walls tangent to node
+# (+) angle => Right Side of Node
+# (-)  angle => Left Side of Node
+anglemin=(-pi/2)+fovangle/2  
 anglemax=(pi/2)-fovangle/2
 
-# Init variables
+# =====Init variables=====
 maxcov=0
 side=[]
 
 #======================================================================================================
 def converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt):
+    # Takes in room parameters and node network parameters
+    # Returns coverage percentage of the given camera network
     xp=[]
     x2p=[]
     yp=[]
@@ -87,7 +94,8 @@ def converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt):
             side.insert(i,3)
         else:
             side.insert(i,1)
-    
+
+    # Create viewing angles and create the points of the area shape
     for i in range(0, len(nodes)):
         ptv=[] # 3 vertex points of the ray
         if(side[i]==2):
@@ -141,9 +149,10 @@ def converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt):
                 ptv.append((x2p,ymax))
         polygon.insert(i,Polygon(ptv))
         
-
+    # Initialize area as array of pixel values
     areacov=numpy.zeros((ymax-ymin+1,xmax-xmin+1))
-    
+
+    #Set to 1 for area pixels covered
     for i in range(xmin,xmax+1):
         for j in range(ymin,ymax+1):
             pointtemp=pointold(i,j)
@@ -157,6 +166,9 @@ def converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt):
     
     return coverage
 #============================================================================ 
+
+#=====Talker Functions=====
+# Functions to publish on the 4 topics
 
 def talkerdiscovery(nodeid):
     global pub1
@@ -215,12 +227,15 @@ def talkeroptctrl(nodeid,state):
     rospy.loginfo(hello_str)
     pub4.publish(hello_str)
     rate.sleep()
-    
+
+#===== Callback Functions =====
+# Functions that execute code once something heard on subscribed topic
+
 def callback(data):
     rospy.loginfo(rospy.get_caller_id() + 'I heard %r', data)
     
 def calldiscovery(data):
-    print("RECIEVED DISCOVERY")
+    print("RECIEVED DISCOVERY from %d" % data.node_id)
     global msg1
     global newdiscovery
     global rosid
@@ -232,9 +247,10 @@ def calldiscovery(data):
     newdiscovery=True
     
 def callannounce(data):
-    print("RECIEVED ANNOUNCE")
+    print("RECIEVED ANNOUNCE from %d" % data.node_id)
     global rosid
     global msg2
+    
     msg2[data.node_id]=data
     time.sleep(1)
     print('All the nodes in network according to')
@@ -245,7 +261,7 @@ def callannounce(data):
         print(t)
         
 def callupdate(data):
-    print("++++++++RECIEVED UPDATE++++++++++")
+    print("++++++++RECIEVED UPDATE from %d++++++++++" % data.node_id)
     global rosid
     global msg2
     global newtilt
@@ -313,7 +329,7 @@ def callupdate(data):
         talkeroptctrl(data.node_id+1,'next')
     
 def callctrl(data):
-    print("++++++++++++++RECIEVED CONTROL+++++++++++++")
+    print("++++++++++++++RECIEVED CONTROL from %d+++++++++++++" % data.node_id)
     global rosid
     global currtilt
     global nodes
@@ -335,8 +351,8 @@ def callctrl(data):
 
        
     tiltfinal=anglemin
-    # Optomize a single tilt
-    print('=====Optomizing this node=====')
+    # Optimize a single tilt
+    print('=====Optimizing this node:=====')
     print(data.node_id)
     print(nodes)
     print(tilt)
@@ -351,10 +367,14 @@ def callctrl(data):
         angle=angle+increm
     # Update that node's angle    
     talkeroptupdate(data.node_id,tiltfinal,0)
-    print("++++++++DONE CONTROL++++++++++")
-    
+    print("++++++++DONE CONTROL %d++++++++++" % data.node_id)
 
+#=====================================================    
+#=============== MAIN FILE ===============================
+#=====================================================
+    
 if __name__ == '__main__':
+    
     # Initialize Node
     rospy.init_node('Node1', anonymous=True)
     
@@ -374,12 +394,12 @@ if __name__ == '__main__':
 
     # Global Variables
     global msg2
-    global msg3
     global maxnode
     global currtilt
     global newdiscovery
     global finishtask
-    msg2={} #Declarea as dictionary
+    
+    msg2={} #Declared as dictionary
 
     #Listen for data from other nodes
     rospy.Subscriber('announce', Identify, callannounce) #msg1 should now have array of all node data
@@ -415,8 +435,6 @@ if __name__ == '__main__':
             if(temp.node_id > maxnode):
                 maxnode=temp.node_id
             nodes.append([temp.position.x,temp.position.y])
-            #tilt.append(temp.pan_tilt.position[0])
-            #Start with all zeros
             tilt.append(0.0)
         print("Initial Values:")
         print(nodes)
@@ -424,7 +442,7 @@ if __name__ == '__main__':
         print(maxnode)
         # Initial configuration
         currtilt=tilt
-        print("=======Begin Optomization===========")
+        print("=======START Optimization===========")
         time.sleep(2)
         # If it is the first node, initiate the optimization
         # else wait till a cntrl signal recieved
@@ -438,8 +456,8 @@ if __name__ == '__main__':
             if(finishtask):
                 break
             time.sleep(1)
-        print("==================END Optomization=============")
-        print("Waiting for new discovery")
+        print("==================ENDING Optimization=============")
+        print("***Waiting for new discovery")
         # Wait for New Node
         while(True):
             if(newdiscovery):
