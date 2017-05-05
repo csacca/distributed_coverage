@@ -305,10 +305,16 @@ def callupdate(data):
         tilt2.append(temp.pan_tilt.position[0])
     nodes=nodes2
     tilt=tilt2
-
+    
     # Break if Not the node that was controlled
     if(data.node_id != rosid):
         return
+    
+    jointstatemsg=JointState()
+    jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
+    jointstatemsg.position=[tilt[rosid-1],0]
+    print(jointstatemsg)
+    talkerturret(jointstatemsg)
     
     # Decide if done when max node reached
     if(data.node_id == maxnode):
@@ -329,6 +335,11 @@ def callupdate(data):
             #print(msg2)
             #print(nodes)
             #print(tilt)
+            jointstatemsg=JointState()
+            jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
+            jointstatemsg.position=[tilt[rosid-1],0]
+            print(jointstatemsg)
+            talkerturret(jointstatemsg)
             # Tell all nodes to pan-tilt
             talkeroptctrl(1,'end')
             return
