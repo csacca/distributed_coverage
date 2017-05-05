@@ -393,7 +393,13 @@ if __name__ == '__main__':
     rospy.init_node('Node1', anonymous=True)
     
     global rosid
-    turret_prefix=""
+    
+    # Input Param Setup
+    rosid=rospy.get_param('~nodeid',0)
+    rosx=rospy.get_param('~posx',0)
+    rosy=rospy.get_param('~posy',0)
+    rostilt=rospy.get_param('~tilt',0)
+    turret_prefix="node_%d" % rosid
     
     # Create Publishers
     pub1 = rospy.Publisher('discovery', EntryExit, queue_size=10)
@@ -401,12 +407,6 @@ if __name__ == '__main__':
     pub3 = rospy.Publisher('optupdate', OptUpdate, queue_size=10)
     pub4 = rospy.Publisher('optctrl', OptCtrl, queue_size=10)
     pub5 = rospy.Publisher(turret_prefix + "/joint_states", JointState, queue_size=10)
-    
-    # Input Param Setup
-    rosid=rospy.get_param('~nodeid',0)
-    rosx=rospy.get_param('~posx',0)
-    rosy=rospy.get_param('~posy',0)
-    rostilt=rospy.get_param('~tilt',0)
 
     # Global Variables
     global msg2
