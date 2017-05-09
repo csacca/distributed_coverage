@@ -58,8 +58,8 @@ from shapely.geometry.polygon import Polygon
 
 
 # =====Parameters=====
-xmax=14             # Right Side
-ymax=14             # Top Side
+xmax=27             # Right Side
+ymax=47            # Top Side
 xmin=0                # Left Side
 ymin=0                # Bottom Side
 fovangle=pi/8      # Field of View for Camera
