@@ -397,7 +397,7 @@ def callctrl(data):
         jointstatemsg.position=[-1*tilt[rosid-1],0]
         print(jointstatemsg)
         talkerturret(jointstatemsg)
-        time.sleep(.2)
+        time.sleep(.01)
         percent=converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt)
         if(percent>maxcov):
             maxcov=percent
