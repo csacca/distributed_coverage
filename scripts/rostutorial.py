@@ -312,7 +312,7 @@ def callupdate(data):
     
     jointstatemsg=JointState()
     jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
-    jointstatemsg.position=[tilt[rosid-1],0]
+    jointstatemsg.position=[-1*tilt[rosid-1],0]
     print(jointstatemsg)
     talkerturret(jointstatemsg)
     
@@ -337,7 +337,7 @@ def callupdate(data):
             #print(tilt)
             jointstatemsg=JointState()
             jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
-            jointstatemsg.position=[tilt[rosid-1],0]
+            jointstatemsg.position=[-1*tilt[rosid-1],0]
             print(jointstatemsg)
             talkerturret(jointstatemsg)
             # Tell all nodes to pan-tilt
@@ -366,7 +366,7 @@ def callctrl(data):
         print(tilt)
         jointstatemsg=JointState()
         jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
-        jointstatemsg.position=[tilt[rosid-1],0]
+        jointstatemsg.position=[-1*tilt[rosid-1],0]
         print(jointstatemsg)
         talkerturret(jointstatemsg)
         
@@ -386,7 +386,7 @@ def callctrl(data):
     tilt[data.node_id-1]=angle
     jointstatemsg=JointState()
     jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
-    jointstatemsg.position=[tilt[rosid-1],0]
+    jointstatemsg.position=[-1*tilt[rosid-1],0]
     print(jointstatemsg)
     talkerturret(jointstatemsg)
     time.sleep(.3)
@@ -394,7 +394,7 @@ def callctrl(data):
         tilt[data.node_id-1]=angle
         jointstatemsg=JointState()
         jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
-        jointstatemsg.position=[tilt[rosid-1],0]
+        jointstatemsg.position=[-1*tilt[rosid-1],0]
         print(jointstatemsg)
         talkerturret(jointstatemsg)
         time.sleep(.2)
@@ -499,7 +499,7 @@ if __name__ == '__main__':
         # Wait for New Node
         while(True):
             if(newdiscovery):
-                time.sleep(7)
+                time.sleep(8)
                 break
             time.sleep(1)
 
