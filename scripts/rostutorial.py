@@ -354,7 +354,7 @@ def callctrl(data):
     global nodes
     global tilt
     global finishtask
-
+    
     # Break if not the node being controlled
     if(data.node_id != rosid):
         return
@@ -448,7 +448,7 @@ if __name__ == '__main__':
     talkerdiscovery(rosid)
 
     # Listen for data from other nodes
-    time.sleep(5)
+    time.sleep(4)
     print('Sending Self to other Nodes / selfid:')
     print(rosid)
     # Announce Self
@@ -457,7 +457,6 @@ if __name__ == '__main__':
     
     rospy.Subscriber('discovery', EntryExit, calldiscovery)
     print('System able to discovery new nodes')
-    time.sleep(3)
     rospy.Subscriber('optupdate', OptUpdate, callupdate)
     rospy.Subscriber('optctrl', OptCtrl, callctrl)
 
@@ -500,7 +499,7 @@ if __name__ == '__main__':
         # Wait for New Node
         while(True):
             if(newdiscovery):
-                time.sleep(2)
+                time.sleep(7)
                 break
             time.sleep(1)
 
