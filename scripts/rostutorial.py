@@ -230,11 +230,11 @@ def talkeroptctrl(nodeid,state):
 
 def talkerturret(jointstatemsg):
     global pub5
-    time.sleep(4)
-    rate = rospy.Rate(10) # 10hz
+    #time.sleep(4)
+    #rate = rospy.Rate(10) # 10hz
     rospy.loginfo(jointstatemsg)
     pub5.publish(jointstatemsg)
-    rate.sleep()
+    #rate.sleep()
 
 #===== Callback Functions =====
 # Functions that execute code once something heard on subscribed topic
@@ -383,8 +383,21 @@ def callctrl(data):
     print(tilt)
     maxcov=0
     angle=anglemin
+    tilt[data.node_id-1]=angle
+    jointstatemsg=JointState()
+    jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
+    jointstatemsg.position=[tilt[rosid-1],0]
+    print(jointstatemsg)
+    talkerturret(jointstatemsg)
+    time.sleep(.3)
     while(angle<=anglemax):
         tilt[data.node_id-1]=angle
+        jointstatemsg=JointState()
+        jointstatemsg.name=[ 'pan_servo_horn_joint', 'tilt_servo_horn_joint']
+        jointstatemsg.position=[tilt[rosid-1],0]
+        print(jointstatemsg)
+        talkerturret(jointstatemsg)
+        time.sleep(.2)
         percent=converge(xmin,xmax,ymin,ymax,fovangle,nodes,tilt)
         if(percent>maxcov):
             maxcov=percent
@@ -451,7 +464,6 @@ if __name__ == '__main__':
     # Loop for Network Optimization Configuration
     while(True):
         print("Wait for Node data and Organize data")
-        time.sleep(20)
         print("No More New Nodes")
         finishtask=False
         nodes=[]
@@ -488,6 +500,7 @@ if __name__ == '__main__':
         # Wait for New Node
         while(True):
             if(newdiscovery):
+                time.sleep(2)
                 break
             time.sleep(1)
 
